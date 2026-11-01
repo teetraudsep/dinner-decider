@@ -1,6 +1,6 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
+ * App-wide colors, font sizes and spacing.
+ * Principle: big text, big buttons, high contrast. Change values here, not in screens.
  */
 
 import '@/global.css';
@@ -9,18 +9,24 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#1A1A1A',
+    textSecondary: '#5C5F66',
+    background: '#FFFBF5',
+    backgroundElement: '#F3EDE4',
+    backgroundSelected: '#E8DFD2',
+    primary: '#E8590C',
+    onPrimary: '#FFFFFF',
+    danger: '#C92A2A',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#F8F5F0',
+    textSecondary: '#B5B0A8',
+    background: '#141210',
+    backgroundElement: '#24211E',
+    backgroundSelected: '#332F2A',
+    primary: '#FF7A2E',
+    onPrimary: '#1A1A1A',
+    danger: '#FF6B6B',
   },
 } as const;
 
@@ -28,13 +34,9 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -51,6 +53,14 @@ export const Fonts = Platform.select({
   },
 });
 
+/** Font sizes. Deliberately larger than iOS defaults. */
+export const FontSize = {
+  body: 20,
+  large: 24,
+  title: 36,
+  hero: 44,
+} as const;
+
 export const Spacing = {
   half: 2,
   one: 4,
@@ -61,5 +71,7 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+/** Minimum height for any tappable button. */
+export const ButtonHeight = 72;
+export const Radius = 20;
+export const MaxContentWidth = 600;
