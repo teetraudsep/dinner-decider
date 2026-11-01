@@ -4,31 +4,30 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '@/constants/theme';
 
 /**
- * One simple stack of screens: each screen slides in on top of the previous one,
- * with a back button in the top-left corner.
+ * One stack of screens. Each screen draws its own back button (as in the design),
+ * so the built-in header is hidden. Swiping from the left edge still goes back.
  */
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const colors = Colors[scheme];
 
   return (
     <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
-          headerBackTitle: 'Back',
-          headerTintColor: colors.primary,
-          headerStyle: { backgroundColor: colors.background },
-          headerTitleStyle: { color: colors.text, fontSize: 20 },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.background },
+          headerShown: false,
+          contentStyle: { backgroundColor: Colors[scheme].bg },
         }}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="capture" options={{ title: 'Photos' }} />
-        <Stack.Screen name="confirm" options={{ title: 'Ingredients' }} />
-        <Stack.Screen name="suggestion" options={{ title: "Tonight's dinner" }} />
-        <Stack.Screen name="cooking" options={{ title: 'Cooking', gestureEnabled: false }} />
-        <Stack.Screen name="profile" options={{ title: 'Household' }} />
-        <Stack.Screen name="planner" options={{ title: 'Weekly Planner' }} />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="capture" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="confirm" />
+        <Stack.Screen name="suggestion" />
+        <Stack.Screen name="cooking" />
+        <Stack.Screen name="rate" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="family" />
+        <Stack.Screen name="planner" />
+        <Stack.Screen name="limit" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
