@@ -16,6 +16,11 @@ When in doubt, remove an option rather than add one.
 - Claude API is called ONLY from a Supabase Edge Function.
   **Never put the Anthropic API key in the app**: no `EXPO_PUBLIC_*` vars, no
   hardcoded keys. The key lives only in Supabase Edge Function secrets.
+- Exception that is fine: the Supabase project URL and *publishable* key are public by
+  design and live in `.env` as `EXPO_PUBLIC_SUPABASE_URL` /
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. `.env` is git-ignored; `.env.example` is committed.
+  Never use the Supabase secret/service_role key in the app.
+- Database changes live in `supabase/migrations/*.sql`; every table has row-level security.
 - Target: iOS first, shipped via TestFlight using EAS Build.
 
 ## Screens

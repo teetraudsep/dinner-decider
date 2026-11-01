@@ -1,28 +1,84 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip, Segmented } from '@/components/chip';
 import { Screen, ScreenHeader, goBack } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth';
+import { DEFAULT_PROFILE, loadProfile, parseList, saveProfile, type Profile } from '@/lib/profile';
+import { supabase } from '@/lib/supabase';
 
 const TIMES = ['15 min', '30 min', '45 min', '60 min'] as const;
 const SPICE = ['Mild', 'Medium', 'Hot'] as const;
 const CUISINES = ['Italian', 'Asian', 'Mexican', 'Home-style', 'Indian'];
 const MOOD_STEPS = 5;
 
+const timeLabel = (m: number) => `${m} min`;
+const spiceLabel = (s: Profile['spiceLevel']) => s[0].toUpperCase() + s.slice(1);
+
+function errorText(e: unknown) {
+  const msg = (e as { message?: string }).message ?? String(e);
+  if (/profiles/.test(msg) && /(does not exist|could not find)/i.test(msg)) {
+    return 'The profiles table is missing. Run the SQL from supabase/migrations in the Supabase SQL Editor.';
+  }
+  return msg;
+}
+
 export default function ProfileScreen() {
   const theme = useTheme();
-  // TODO: load and save the household profile in Supabase.
-  const [people, setPeople] = useState(4);
-  const [avoid, setAvoid] = useState('Kids: no mushrooms');
-  const [allergies, setAllergies] = useState('Nuts');
-  const [time, setTime] = useState<string>('30 min');
-  const [spice, setSpice] = useState<string>('Medium');
-  const [cuisines, setCuisines] = useState(['Italian', 'Asian', 'Home-style']);
-  const [mood, setMood] = useState(1);
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const d = DEFAULT_PROFILE;
+
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [people, setPeople] = useState(d.householdSize);
+  const [avoid, setAvoid] = useState(d.pickyEaters);
+  const [allergies, setAllergies] = useState('');
+  const [time, setTime] = useState<string>(timeLabel(d.weeknightMinutes));
+  const [spice, setSpice] = useState<string>(spiceLabel(d.spiceLevel));
+  const [cuisines, setCuisines] = useState(d.favoriteCuisines);
+  const [mood, setMood] = useState(d.adventurousness);
+
+  useEffect(() => {
+    if (!userId) return;
+    loadProfile(userId)
+      .then((p) => {
+        setPeople(p.householdSize);
+        setAvoid(p.pickyEaters);
+        setAllergies(p.allergies.join(', '));
+        setTime(timeLabel(p.weeknightMinutes));
+        setSpice(spiceLabel(p.spiceLevel));
+        setCuisines(p.favoriteCuisines);
+        setMood(p.adventurousness);
+      })
+      .catch((e) => Alert.alert('Could not load your profile', errorText(e)))
+      .finally(() => setLoaded(true));
+  }, [userId]);
+
+  const save = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      await saveProfile(userId, {
+        householdSize: people,
+        pickyEaters: avoid,
+        allergies: parseList(allergies),
+        weeknightMinutes: parseInt(time, 10) as Profile['weeknightMinutes'],
+        spiceLevel: spice.toLowerCase() as Profile['spiceLevel'],
+        favoriteCuisines: cuisines,
+        adventurousness: mood,
+      });
+      goBack();
+    } catch (e) {
+      Alert.alert('Could not save', errorText(e));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const toggleCuisine = (c: string) =>
     setCuisines((list) => (list.includes(c) ? list.filter((x) => x !== c) : [...list, c]));
@@ -30,10 +86,25 @@ export default function ProfileScreen() {
   const input = [styles.input, { color: theme.ink2 }];
   const divider = { borderBottomWidth: 1, borderBottomColor: theme.divider };
 
+  if (!loaded) {
+    return (
+      <Screen header={<ScreenHeader title="Your household" />}>
+        <ActivityIndicator color={theme.accent} style={styles.loading} />
+      </Screen>
+    );
+  }
+
   return (
     <Screen
       header={<ScreenHeader title="Your household" subtitle="Set once. Every dinner fits it." />}
-      footer={<Button variant="strong" label="Save" onPress={goBack} />}>
+      footer={
+        <Button
+          variant="strong"
+          label={saving ? 'Saving…' : 'Save'}
+          onPress={save}
+          disabled={saving}
+        />
+      }>
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.line }]}>
         <View style={[styles.cardRow, divider]}>
           <ThemedText style={styles.rowLabel}>People</ThemedText>
@@ -81,8 +152,13 @@ export default function ProfileScreen() {
             accessibilityLabel="Allergies"
             value={allergies}
             onChangeText={setAllergies}
+            placeholder="e.g. nuts, shellfish (comma-separated)"
+            placeholderTextColor={theme.ink3}
             style={input}
           />
+          <ThemedText type="caption" color="alertText">
+            Never in any dinner we suggest.
+          </ThemedText>
         </View>
       </View>
 
@@ -145,6 +221,13 @@ export default function ProfileScreen() {
           </ThemedText>
         </View>
       </View>
+
+      <View style={styles.account}>
+        <ThemedText type="caption" color="ink3">
+          Signed in as {session?.user.email ?? 'Apple ID'}
+        </ThemedText>
+        <Button label="Sign out" variant="link" onPress={() => supabase.auth.signOut()} />
+      </View>
     </Screen>
   );
 }
@@ -172,6 +255,8 @@ function StepperButton({
 }
 
 const styles = StyleSheet.create({
+  loading: { marginTop: 48 },
+  account: { alignItems: 'center', marginTop: 8 },
   card: {
     borderRadius: 18,
     borderWidth: 1,
