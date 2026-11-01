@@ -36,3 +36,7 @@ Allergies are a hard constraint: a suggestion must never include them.
 ## Working with me
 I'm a beginner building my first iOS app. Explain each command before running it,
 and ask before installing anything.
+
+## Expo conventions
+Follow the Expo guidance in AGENTS.md:
+@AGENTS.md
